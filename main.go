@@ -1,13 +1,17 @@
 package main
 
 import (
-	"url"
+	"net/url"
 	"errors"
 	"log"
 	"fmt"
 	"net/http"
 	"encoding/json"
 	"github.com/gorilla/mux"
+)
+
+var (
+	VOLUNTEERO_AUTH = "https://volunteero-auth.herokuapp.com/auth"
 )
 
 type Role struct {
@@ -63,10 +67,12 @@ func handleNoToken(w http.ResponseWriter) {
 	http.Error(w, string(resp), http.StatusUnauthorized)
 }
 
-func getRolesFromAuth(token string) {
+func getRolesFromAuth(token string) (*http.Response, error) {
 	payload := url.Values{}
 	payload.Add("accessToken",token)
-	req, err := http.Get("https://someendpoint?" + payload.Encode(), nil)
+	req, err := http.Get(VOLUNTEERO_AUTH +"/roles?" + payload.Encode())
+	log.Println("got roles response")
+	log.Print(req)
 	return req, err
 }
 
@@ -81,7 +87,8 @@ func getRoles(w http.ResponseWriter, r *http.Request){
 		handleNoToken(w)
 		return 
 	}
-	
+
+	getRolesFromAuth(token)
 	response := resolveRoles(token)
 	fmt.Println(message)
 	json.NewEncoder(w).Encode(response)
