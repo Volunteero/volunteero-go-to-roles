@@ -1,6 +1,7 @@
 package main
 
 import (
+	"url"
 	"errors"
 	"log"
 	"fmt"
@@ -54,6 +55,21 @@ func resolveRoles(token string) Response {
 	return Response{Roles:roles}
 }
 
+func handleNoToken(w http.ResponseWriter) {
+	errorResponse := ErrorResponse{
+		Message:errors.New("please, provide a token").Error(),
+	}
+	resp, _ := json.Marshal(errorResponse)
+	http.Error(w, string(resp), http.StatusUnauthorized)
+}
+
+func getRolesFromAuth(token string) {
+	payload := url.Values{}
+	payload.Add("accessToken",token)
+	req, err := http.Get("https://someendpoint?" + payload.Encode(), nil)
+	return req, err
+}
+
 
 func getRoles(w http.ResponseWriter, r *http.Request){
 	message := "Get Roles Endpoint Hit"
@@ -62,11 +78,7 @@ func getRoles(w http.ResponseWriter, r *http.Request){
 	token := resolveAccessToken(r)
 
 	if(token == ""){
-		errorResponse := ErrorResponse{
-			Message:errors.New("please, provide a token").Error(),
-		}
-		resp, _ := json.Marshal(errorResponse)
-		http.Error(w, string(resp), http.StatusUnauthorized)
+		handleNoToken(w)
 		return 
 	}
 	
